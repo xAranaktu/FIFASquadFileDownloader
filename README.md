@@ -1,0 +1,2 @@
+# FIFASquadFileDownloader
+Clientless squadfile downloader
