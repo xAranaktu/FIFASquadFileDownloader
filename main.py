@@ -6,9 +6,11 @@ import xml.etree.ElementTree as ET
 from other.binreader import read_int8
 
 RESULT_DIR = "result"
-CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
+# CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
+
+CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
 ROSTERUPDATE_XML = "rosterupdate.xml"
-FIFA = "21"
+FIFA = "22"
 
 
 def download(fpath, url):
@@ -19,7 +21,7 @@ def download(fpath, url):
 
 
 def download_rosterupdate():
-    roster_update_url = "{}fifa/fifalive/gen4title/rosterupdate.xml".format(CONTENT_URL)
+    roster_update_url = "{}fifa/fifalive/genxtitle/rosterupdate.xml".format(CONTENT_URL)
     download(ROSTERUPDATE_XML, roster_update_url)
 
 
