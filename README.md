@@ -2,9 +2,11 @@
 
 Python script which dowloads latest FIFA 23 squadfile and futsquadfile from game servers for platforms:
 - PC64
-- sta (stadia?)
+- sta (stadia)
 - XONE
+- XBSX
 - PS4
+- PS5
 
 
 You don't need to run the game and it also doesn't require any credentials.
