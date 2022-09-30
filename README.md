@@ -1,6 +1,6 @@
 # FIFASquadFileDownloader
 
-Python script which dowloads latest FIFA 21 squadfile and futsquadfile from game servers for platforms:
+Python script which dowloads latest FIFA 23 squadfile and futsquadfile from game servers for platforms:
 - PC64
 - sta (stadia?)
 - XONE

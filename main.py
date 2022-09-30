@@ -7,10 +7,12 @@ from other.binreader import read_int8
 
 RESULT_DIR = "result"
 # CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
+#CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
 
-CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
+
+CONTENT_URL = "https://fifa23.content.easports.com/fifa/fltOnlineAssets/23DF3AC5-9539-438B-8414-146FAFDE3FF2/2023/"
 ROSTERUPDATE_XML = "rosterupdate.xml"
-FIFA = "22"
+FIFA = "23"
 
 
 def download(fpath, url):
@@ -32,11 +34,11 @@ def save_squads(buf, outsz, path, filename):
 
     headersz = 44
     totalsz = outsz + headersz
-    headermax_sz = 0x92
+    headermax_sz = 0xF6
     fheader = []
 
     # FBCHUNKS
-    fheader.append(b"\x46\x42\x43\x48\x55\x4E\x4B\x53\x01\x00\x54\x00\x00\x00")
+    fheader.append(b"\x46\x42\x43\x48\x55\x4E\x4B\x53\x01\x00\xB8\x00\x00\x00")
 
     # Filesize
     fheader.append(totalsz.to_bytes(4, 'little'))
@@ -55,9 +57,11 @@ def save_squads(buf, outsz, path, filename):
 
     # nullbyte padding
     fheader.append(b"\x00" * 0x12)
+    fheader.append(b"\x00" * 0x64)
+
 
     #Unknown
-    fheader.append(b"\x20\xD4\x05\xE4\xC7\x72\xFD\x43\xB1\xA5\xB6\x10\x13\xE8\xBE\x87\x00\x00\x00\x00")
+    fheader.append(b"\x00\x07\x5C\xB7\xEE\xFF\xFF\xFF\xFF\xFF\xFF\xF9\xC3\x6B\x0C\x00\x00\x00\x00\x00")
     # SaveType
     if "Fut" in filename:
         fheader.append(b"\x53\x61\x76\x65\x54\x79\x70\x65\x5F\x46\x55\x54\x53\x71\x75\x00")
@@ -68,7 +72,7 @@ def save_squads(buf, outsz, path, filename):
     fheader.append(b"\x00" * 4)
 
     #Unknown
-    fheader.append(b"\xC9\x00\x00\x00\x20\xD4\x05\xE4\xC7\x72\xFD\x43\xB1\xA5\xB6\x10\x13\xE8\xBE\x87\x00\x00\x00\x00")
+    fheader.append(b"\xD2\x00\x00\x00\x72\xB7\x97\x00\x40\x32\xA7\x46\x87\x10\x16\x6A\xFC\xD8\x1D\x23\x00\x00\x00\x00")
 
     with open(fullpath, 'wb') as f:
         for b in fheader:
