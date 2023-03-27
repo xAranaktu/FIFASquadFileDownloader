@@ -2,7 +2,7 @@ import os
 import mmap
 import urllib.request
 import xml.etree.ElementTree as ET
-
+import ssl
 from other.binreader import read_int8
 
 RESULT_DIR = "result"
@@ -16,6 +16,9 @@ FIFA = "23"
 
 
 def download(fpath, url):
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False  # Disable hostname verification
+    ssl_context.verify_mode = ssl.CERT_NONE  # Disable certificate verification
     print("Download: {}".format(url))
     with open(fpath, "wb") as f:
         response = urllib.request.urlopen(url)
