@@ -5,6 +5,9 @@ import xml.etree.ElementTree as ET
 
 from other.binreader import read_int8
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 RESULT_DIR = "result"
 # CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
 #CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
