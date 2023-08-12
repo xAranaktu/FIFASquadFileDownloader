@@ -132,5 +132,7 @@ dmypy.json
 .result/
 
 result/
+result22/
+result23/
 
 rosterupdate.xml

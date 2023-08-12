@@ -4,29 +4,29 @@ import urllib.request
 import xml.etree.ElementTree as ET
 
 from other.binreader import read_int8
-
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 RESULT_DIR = "result"
 # CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
-#CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
-
-
-CONTENT_URL = "https://fifa23.content.easports.com/fifa/fltOnlineAssets/23DF3AC5-9539-438B-8414-146FAFDE3FF2/2023/"
+# CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
+# CONTENT_URL = "https://fifa23.content.easports.com/fifa/fltOnlineAssets/23DF3AC5-9539-438B-8414-146FAFDE3FF2/2023/"
+CONTENT_URL = "https://eafc24.content.easports.com/fc/fltOnlineAssets/24CD3F70-3D80-4FF6-94D9-A71BF65D38BA/2024/"
 ROSTERUPDATE_XML = "rosterupdate.xml"
-FIFA = "23"
+FIFA = "24"
 
 
 def download(fpath, url):
     print("Download: {}".format(url))
     with open(fpath, "wb") as f:
-        response = urllib.request.urlopen(url)
-        f.write(response.read())
-
+        try:
+            response = urllib.request.urlopen(url)
+            f.write(response.read())
+        except Exception as e:
+            print(e)
 
 def download_rosterupdate():
-    roster_update_url = "{}fifa/fifalive/genxtitle/rosterupdate.xml".format(CONTENT_URL)
+    roster_update_url = "{}fc/fclive/genxtitle/rosterupdate.xml".format(CONTENT_URL)
     download(ROSTERUPDATE_XML, roster_update_url)
 
 
