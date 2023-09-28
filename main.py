@@ -11,7 +11,7 @@ RESULT_DIR = "result"
 # CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
 # CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
 # CONTENT_URL = "https://fifa23.content.easports.com/fifa/fltOnlineAssets/23DF3AC5-9539-438B-8414-146FAFDE3FF2/2023/"
-CONTENT_URL = "https://eafc24.content.easports.com/fc/fltOnlineAssets/24CD3F70-3D80-4FF6-94D9-A71BF65D38BA/2024/"
+CONTENT_URL = "https://eafc24.content.easports.com/fc/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/"
 ROSTERUPDATE_XML = "rosterupdate.xml"
 FIFA = "24"
 
