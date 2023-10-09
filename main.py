@@ -35,9 +35,8 @@ def save_squads(buf, outsz, path, filename):
     # SAVE
     ingame_name = "EA_{}".format(filename)
 
-    headersz = 44
+    headersz = 52
     totalsz = outsz + headersz
-    headermax_sz = 0xF6
     fheader = []
 
     # FBCHUNKS
@@ -75,7 +74,18 @@ def save_squads(buf, outsz, path, filename):
     fheader.append(b"\x00" * 4)
 
     #Unknown
-    fheader.append(b"\xD2\x00\x00\x00\x72\xB7\x97\x00\x40\x32\xA7\x46\x87\x10\x16\x6A\xFC\xD8\x1D\x23\x00\x00\x00\x00")
+    fheader.append(
+        b"\xD2\x00\x00\x00"
+        b"\x72\xB7\x97\x00"
+        b"\x40\x32\xA7\x46"
+        b"\x87\x10\x16\x6A"
+        b"\xFC\xD8\x1D\x23"
+        b"\x1C\xE6\x89\x95"
+        b"\x00\x00\x00\x00"
+    )
+
+    if not "Fut" in filename:
+        fheader.append(b"\x28\x6F\xA0\x00")
 
     with open(fullpath, 'wb') as f:
         for b in fheader:
