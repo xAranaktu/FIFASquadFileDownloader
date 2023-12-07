@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fifasquadfiledownloader"
+name = "squad_downloader"
 version = "0.1.0"
 description = "Clientless squadfile downloader"
 authors = ["xAranaktu"]

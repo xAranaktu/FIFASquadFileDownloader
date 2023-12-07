@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 from requests import get
 
-from other.binreader import read_int8
+from squad_downloader.binreader import read_int8
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
