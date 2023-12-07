@@ -1,10 +1,14 @@
-import os
 import mmap
-import urllib.request
+import os
+import ssl
 import xml.etree.ElementTree as ET
+from http import HTTPStatus
+
+from requests import get
+from requests.exceptions import RequestException
 
 from other.binreader import read_int8
-import ssl
+
 ssl._create_default_https_context = ssl._create_unverified_context
 
 RESULT_DIR = "result"
@@ -17,16 +21,19 @@ FIFA = "24"
 
 
 def download(fpath, url):
-    print("Download: {}".format(url))
+    print(f"Download: {url}")
     with open(fpath, "wb") as f:
         try:
-            response = urllib.request.urlopen(url)
-            f.write(response.read())
-        except Exception as e:
+            response = get(url)
+            if response.status_code != HTTPStatus.ACCEPTED:
+                print("No response from server.")
+            else:
+                f.write(response.content)
+        except RequestException as e:
             print(e)
 
 def download_rosterupdate():
-    roster_update_url = "{}fc/fclive/genxtitle/rosterupdate.xml".format(CONTENT_URL)
+    roster_update_url = f"{CONTENT_URL}fc/fclive/genxtitle/rosterupdate.xml"
     download(ROSTERUPDATE_XML, roster_update_url)
 
 
@@ -84,7 +91,7 @@ def save_squads(buf, outsz, path, filename):
         b"\x00\x00\x00\x00"
     )
 
-    if not "Fut" in filename:
+    if "Fut" not in filename:
         fheader.append(b"\x28\x6F\xA0\x00")
 
     with open(fullpath, 'wb') as f:
@@ -119,7 +126,7 @@ def process_rosterupdate():
                     platform["tags"][node.tag] = node.text
 
             result["platforms"].append(platform)
-    except Exception as e:
+    except IndexError:
         return result
 
     return result
@@ -146,7 +153,7 @@ def unpack(fpath):
     mm.seek(0x2, 1)     # sign
     outsz = mm.read(0x3)     # bufsz
     ebx = read_int8(mm)   # 0xE0
-    bit_is_set = (ebx & 0x80) != 0
+    # bit_is_set = (ebx & 0x80) != 0
 
     mm.seek(0x4, 1)     # DB skip
 
@@ -444,11 +451,11 @@ if __name__ == '__main__':
             loc = tags["dbMajorLoc"]
             bin_fname = os.path.basename(loc)
             bin_path = os.path.join(ver_path, bin_fname)
-            download(bin_path, "{}{}".format(CONTENT_URL, loc))
+            download(bin_path, f"{CONTENT_URL}{loc}")
             fdate = bin_fname.split("_")[1]
 
             buf, sz = unpack(bin_path)
-            save_squads(buf, sz, ver_path, "Squads{}000000".format(fdate))
+            save_squads(buf, sz, ver_path, f"Squads{fdate}000000")
 
         ver = tags["dbFUTVer"]
         ver_path = os.path.join(platform_path, "FUT", ver)
@@ -457,8 +464,8 @@ if __name__ == '__main__':
             loc = tags["dbFUTLoc"]
             bin_fname = os.path.basename(loc)
             bin_path = os.path.join(ver_path, bin_fname)
-            download(bin_path, "{}{}".format(CONTENT_URL, loc))
+            download(bin_path, f"{CONTENT_URL}{loc}")
             fdate = bin_fname.split("_")[1]
 
             buf, sz = unpack(bin_path)
-            save_squads(buf, sz, ver_path, "FutSquads{}000000".format(fdate))
+            save_squads(buf, sz, ver_path, f"FutSquads{fdate}000000")
