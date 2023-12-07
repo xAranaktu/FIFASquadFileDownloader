@@ -2,10 +2,8 @@ import mmap
 import os
 import ssl
 import xml.etree.ElementTree as ET
-from http import HTTPStatus
 
 from requests import get
-from requests.exceptions import RequestException
 
 from other.binreader import read_int8
 
@@ -24,12 +22,10 @@ def download(fpath, url):
     print(f"Download: {url}")
     with open(fpath, "wb") as f:
         try:
-            response = get(url)
-            if response.status_code != HTTPStatus.ACCEPTED:
-                print("No response from server.")
-            else:
-                f.write(response.content)
-        except RequestException as e:
+            response = get(url=url)
+            content = response.content
+            f.write(content)
+        except Exception as e:
             print(e)
 
 def download_rosterupdate():
@@ -40,7 +36,7 @@ def download_rosterupdate():
 def save_squads(buf, outsz, path, filename):
     fullpath = os.path.join(path, filename)
     # SAVE
-    ingame_name = "EA_{}".format(filename)
+    ingame_name = f"EA_{filename}"
 
     headersz = 52
     totalsz = outsz + headersz
@@ -126,7 +122,7 @@ def process_rosterupdate():
                     platform["tags"][node.tag] = node.text
 
             result["platforms"].append(platform)
-    except IndexError:
+    except Exception:
         return result
 
     return result
@@ -145,7 +141,7 @@ def process_rosterupdate():
 
 
 def unpack(fpath):
-    print("Unpacking: {}".format(fpath))
+    print(f"Unpacking: {fpath}")
 
     with open(fpath, 'rb') as f:
         mm = mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ)
