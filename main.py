@@ -11,9 +11,10 @@ RESULT_DIR = "result"
 # CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
 # CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
 # CONTENT_URL = "https://fifa23.content.easports.com/fifa/fltOnlineAssets/23DF3AC5-9539-438B-8414-146FAFDE3FF2/2023/"
-CONTENT_URL = "https://eafc24.content.easports.com/fc/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/"
+# CONTENT_URL = "https://eafc24.content.easports.com/fc/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/"
+CONTENT_URL = "https://eafc25.content.easports.com/fc/fltOnlineAssets/25E4CDAE-799B-45BE-B257-667FDCDE8044/2025/"
 ROSTERUPDATE_XML = "rosterupdate.xml"
-FIFA = "24"
+FIFA = "25"
 
 
 def download(fpath, url):
@@ -32,11 +33,17 @@ def download_rosterupdate():
 
 def save_squads(buf, outsz, path, filename):
     fullpath = os.path.join(path, filename)
+
     # SAVE
     ingame_name = "EA_{}".format(filename)
 
     headersz = 52
     totalsz = outsz + headersz
+
+    # BNRY FILE - ADDED IN EAFC25, only for Squads
+    if not "Fut" in filename:
+        totalsz += os.stat("bnry").st_size
+
     fheader = []
 
     # FBCHUNKS
@@ -75,17 +82,17 @@ def save_squads(buf, outsz, path, filename):
 
     #Unknown
     fheader.append(
-        b"\xD2\x00\x00\x00"
-        b"\x72\xB7\x97\x00"
-        b"\x40\x32\xA7\x46"
-        b"\x87\x10\x16\x6A"
-        b"\xFC\xD8\x1D\x23"
-        b"\x1C\xE6\x89\x95"
+        b"\x15\x01\x00\x00"
+        b"\x01\x00\x00\x00"
+        b"\x3F\xD2\x7C\xEE"
+        b"\x98\x34\x13\x40"
+        b"\x84\x58\x95\x61"
+        b"\xBB\xE0\x64\xEB"
         b"\x00\x00\x00\x00"
     )
 
     if not "Fut" in filename:
-        fheader.append(b"\x28\x6F\xA0\x00")
+        fheader.append(b"\x55\xCC\x9C\x00")
 
     with open(fullpath, 'wb') as f:
         for b in fheader:
@@ -93,6 +100,10 @@ def save_squads(buf, outsz, path, filename):
 
         for i in range(outsz):
             f.write(buf[i].to_bytes(1, 'little'))
+
+        if not "Fut" in filename:
+            with open("bnry", 'rb') as fbnry:
+                f.write(fbnry.read())
 
     return filename
 
@@ -431,6 +442,10 @@ if __name__ == '__main__':
     result = process_rosterupdate()
 
     for platform in result["platforms"]:
+        # Ignore Stadia. Stadia was shut down on January 18, 2023.
+        if platform["name"] == "sta":
+            continue
+
         platform_path = os.path.join(RESULT_DIR, platform["name"])
         if not os.path.isdir(platform_path):
             os.mkdir(platform_path)
