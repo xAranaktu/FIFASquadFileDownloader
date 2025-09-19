@@ -74,7 +74,7 @@ def save_squads(buf, path, filename):
     save_type_fut = b"SaveType_FUTSqu\x00"
 
     author_sign = b"Aranaktu"
-    
+
     # FC26 chunk sizes
     prefix_header_size = 1126
     main_header_size = 48
@@ -121,9 +121,9 @@ def save_squads(buf, path, filename):
     # CRC32
     crc_pos = len(save_type)
     main_header[crc_pos:crc_pos+4] = (0).to_bytes(4, "little") 
-    
+
     # Calculate data section size
-    data_size = db_size + (0 if is_fut else bnry_size)
+    data_size = 0 if is_fut else db_size + bnry_size
     
     with open(fullpath, "wb") as f:
         # Write prefix header
@@ -145,7 +145,6 @@ def save_squads(buf, path, filename):
             f.write(b"\x00" * remaining_bnry)
     
     return filename
-
 
 def unpack(fpath):
     print("Unpacking: {}".format(fpath))
