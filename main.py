@@ -1,20 +1,25 @@
 import os
-import mmap
 import urllib.request
 import xml.etree.ElementTree as ET
-
-from other.binreader import read_int8
 import ssl
+
 ssl._create_default_https_context = ssl._create_unverified_context
 
-RESULT_DIR = "result"
 # CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
 # CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
 # CONTENT_URL = "https://fifa23.content.easports.com/fifa/fltOnlineAssets/23DF3AC5-9539-438B-8414-146FAFDE3FF2/2023/"
 # CONTENT_URL = "https://eafc24.content.easports.com/fc/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/"
-CONTENT_URL = "https://eafc25.content.easports.com/fc/fltOnlineAssets/25E4CDAE-799B-45BE-B257-667FDCDE8044/2025/"
+# CONTENT_URL = "https://eafc25.content.easports.com/fc/fltOnlineAssets/25E4CDAE-799B-45BE-B257-667FDCDE8044/2025/"
+CONTENT_URL = "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/"
 ROSTERUPDATE_XML = "rosterupdate.xml"
-FIFA = "25"
+
+# signs
+T3DB = b"\x44\x42\x00\x08"
+FBCHUNKS = b"\x46\x42\x43\x48\x55\x4E\x4B\x53\x01\x00"
+BNRY = b"\x42\x4E\x52\x59\x00\x00\x00\x02\x4C\x54\x4C\x45\x01\x01\x03\x00" \
+       b"\x00\x00\x63\x64\x73\x01\x00\x00\x00\x00\x01\x03\x00\x00\x00\x63\x64\x73"
+
+RESULT_DIR = "result"
 
 
 def download(fpath, url):
@@ -30,93 +35,16 @@ def download_rosterupdate():
     roster_update_url = "{}fc/fclive/genxtitle/rosterupdate.xml".format(CONTENT_URL)
     download(ROSTERUPDATE_XML, roster_update_url)
 
-
-def save_squads(buf, outsz, path, filename):
-    fullpath = os.path.join(path, filename)
-
-    # SAVE
-    ingame_name = "EA_{}".format(filename)
-
-    headersz = 52
-    totalsz = outsz + headersz
-
-    # BNRY FILE - ADDED IN EAFC25, only for Squads
-    if not "Fut" in filename:
-        totalsz += os.stat("bnry").st_size
-
-    fheader = []
-
-    # FBCHUNKS
-    fheader.append(b"\x46\x42\x43\x48\x55\x4E\x4B\x53\x01\x00\xB8\x00\x00\x00")
-
-    # Filesize
-    fheader.append(totalsz.to_bytes(4, 'little'))
-
-    # Name of the squadfile visible in game
-    fheader.append(ingame_name.encode())
-
-    # mySign
-    if "Fut" in filename:
-        fheader.append(b"\x00" * 4)
-    else:
-        fheader.append(b"\x00" * 7)
-
-    fheader.append("Aranaktu".encode())
-    fheader.append(b"\x00" * 8)
-
-    # nullbyte padding
-    fheader.append(b"\x00" * 0x12)
-    fheader.append(b"\x00" * 0x64)
-
-
-    #Unknown
-    fheader.append(b"\x00\x07\x5C\xB7\xEE\xFF\xFF\xFF\xFF\xFF\xFF\xF9\xC3\x6B\x0C\x00\x00\x00\x00\x00")
-    # SaveType
-    if "Fut" in filename:
-        fheader.append(b"\x53\x61\x76\x65\x54\x79\x70\x65\x5F\x46\x55\x54\x53\x71\x75\x00")
-    else:
-        fheader.append(b"\x53\x61\x76\x65\x54\x79\x70\x65\x5F\x53\x71\x75\x61\x64\x73\x00")
-
-    # CRC32 of DB
-    fheader.append(b"\x00" * 4)
-
-    #Unknown
-    fheader.append(
-        b"\x15\x01\x00\x00"
-        b"\x01\x00\x00\x00"
-        b"\x3F\xD2\x7C\xEE"
-        b"\x98\x34\x13\x40"
-        b"\x84\x58\x95\x61"
-        b"\xBB\xE0\x64\xEB"
-        b"\x00\x00\x00\x00"
-    )
-
-    if not "Fut" in filename:
-        fheader.append(b"\x55\xCC\x9C\x00")
-
-    with open(fullpath, 'wb') as f:
-        for b in fheader:
-            f.write(b)
-
-        for i in range(outsz):
-            f.write(buf[i].to_bytes(1, 'little'))
-
-        if not "Fut" in filename:
-            with open("bnry", 'rb') as fbnry:
-                f.write(fbnry.read())
-
-    return filename
-
 def process_rosterupdate():
     result = dict()
     to_collect = [
         "dbMajor", "dbFUTVer", "dbMajorLoc", "dbFUTLoc"
     ]
-
+    
     download_rosterupdate()
     tree = ET.parse(ROSTERUPDATE_XML)
     root = tree.getroot()
-
+    
     try:
         squadinfoset = root[0]
         result["platforms"] = list()
@@ -128,330 +56,206 @@ def process_rosterupdate():
             for node in list(child.iter()):
                 if node.tag in to_collect:
                     platform["tags"][node.tag] = node.text
-
+            
             result["platforms"].append(platform)
     except Exception as e:
         return result
-
+    
     return result
 
 
-# def extract(filename):
-#     result_dir = "extracted"
-#     if not os.path.isdir(result_dir):
-#         os.mkdir(result_dir)
-#     xml_meta_path = os.path.join("Data", FIFA, "XML", "fifa_ng_db-meta.xml")
-#
-#     fp = FIFAFileParser(result_dir, xml_meta_path, filename)
-#     fp.unpack_files()
-#     fp.process_all([])
-#     fp.export_all()
+def save_squads(buf, path, filename):
+    fullpath = os.path.join(path, filename)
+    is_fut = "Fut" in filename
+    db_size = len(buf)
+    
+    # Save types
+    save_type_squads = b"SaveType_Squads\x00"
+    save_type_fut = b"SaveType_FUTSqu\x00"
 
+    author_sign = b"Aranaktu"
+
+    # FC26 chunk sizes
+    prefix_header_size = 1126
+    main_header_size = 48
+    bnry_size = 45985
+
+    # Calculate file size
+    bnry_size = 0 if is_fut else bnry_size
+    file_size = main_header_size + 4 + db_size + bnry_size
+    
+    # Build prefix header
+    prefix_header = bytearray(prefix_header_size)
+    pos = 0
+    
+    # FBCHUNKS sign
+    prefix_header[pos:pos+len(FBCHUNKS)] = FBCHUNKS
+    pos += len(FBCHUNKS)
+    
+    # Main header offset
+    main_header_offset = prefix_header_size - pos - 8
+    prefix_header[pos:pos+4] = main_header_offset.to_bytes(4, "little")
+    pos += 4
+    
+    # File size excluding prefix header
+    prefix_header[pos:pos+4] = file_size.to_bytes(4, "little")
+    pos += 4
+    
+    # In-game name 
+    ingame_name = "EA_{}".format(filename).encode()[:40] # max to 40 bytes
+    prefix_header[pos:pos+len(ingame_name)] = ingame_name
+    pos += len(ingame_name)
+
+    # Author sign
+    sign_size = 4 if is_fut else 7
+    pos += sign_size
+    prefix_header[pos:pos+len(author_sign)] = author_sign 
+    
+    # Build main header
+    main_header = bytearray(main_header_size)
+
+    # Save type
+    save_type = save_type_fut if is_fut else save_type_squads
+    main_header[:len(save_type)] = save_type
+    
+    # CRC32
+    crc_pos = len(save_type)
+    main_header[crc_pos:crc_pos+4] = (0).to_bytes(4, "little") 
+
+    # Calculate data section size
+    data_size = 0 if is_fut else db_size + bnry_size
+    
+    with open(fullpath, "wb") as f:
+        # Write prefix header
+        f.write(bytes(prefix_header))
+        
+        # Write main header
+        f.write(bytes(main_header))
+        
+        # Write data section size
+        f.write(data_size.to_bytes(4, "little"))
+        
+        # Write DB
+        f.write(buf)
+        
+        # Write BNRY chunk only for Squads
+        if not is_fut:
+            f.write(BNRY)
+            remaining_bnry = bnry_size - len(BNRY)
+            f.write(b"\x00" * remaining_bnry)
+    
+    return filename
 
 def unpack(fpath):
     print("Unpacking: {}".format(fpath))
-
-    with open(fpath, 'rb') as f:
-        mm = mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ)
-
-    mm.seek(0x2, 1)     # sign
-    outsz = mm.read(0x3)     # bufsz
-    ebx = read_int8(mm)   # 0xE0
-    bit_is_set = (ebx & 0x80) != 0
-
-    mm.seek(0x4, 1)     # DB skip
-
-    outsz = outsz[2] | outsz[1] << 8 | outsz[0] << 16
-
-    outbuf = [0] * (outsz * 2)
-    outbuf[0] = 0x44
-    outbuf[1] = 0x42
-    outbuf[2] = 0x0
-    outbuf[3] = 0x8
-    outbuf_cursor = 4
-
-    pos = mm.tell()
-    try:
-        while True:
-            mm.seek(pos)
-            ebx = read_int8(mm)
-            pos += 1
-            # highest bit
-            x80_is_set = (ebx & 0x80) != 0
-            x40_is_set = (ebx & 0x40) != 0
-            x20_is_set = (ebx & 0x20) != 0
-            if not x80_is_set:
-                edx = read_int8(mm)
-                pos += 1
-                eax = read_int8(mm)
-
-                ecx = ebx & 3
-                outbuf[outbuf_cursor] = eax
-                outbuf[outbuf_cursor+1] = read_int8(mm)
-                outbuf[outbuf_cursor+2] = read_int8(mm)
-
-                eax = ecx
-                outbuf_cursor += eax
-                pos += eax
-                mm.seek(pos)
-
-                eax = ebx
-                r8 = outbuf_cursor  # outbuf_cursor == r10
-                eax = eax & 0x60
-                ebx = ((ebx >> 2) & 7) + 3
-                ecx = edx + (eax*8)
-                eax = ebx
-                r8 -= ecx
-                outbuf_cursor += eax
-
-                r8 -= 1
-                r8 += eax
-                ebx = ebx * -1
-                edx = ebx
-                if edx == 0:
-                    continue
-
-                r8 -= outbuf_cursor
-                idx = edx + outbuf_cursor*1
-                edx = edx * -1
-                do_loop = True
-                while do_loop:
-                    eax = outbuf[r8+idx]
-                    outbuf[idx] = eax
-                    edx -= 1
-                    idx += 1
-                    do_loop = edx > 0
-
-            elif not x40_is_set:
-                edx = read_int8(mm)
-                ebx = ebx & 0x3F
-
-                r8 = edx
-                edx = edx & 0x3F
-                ebx += 4
-
-                ecx = read_int8(mm)     # +1
-                eax = read_int8(mm)     # +2
-
-                outbuf[outbuf_cursor] = eax
-                outbuf[outbuf_cursor+1] = read_int8(mm)    # +3
-                outbuf[outbuf_cursor+2] = read_int8(mm)    # +4
-
-                r8 = r8 >> 6
-                eax = r8
-                outbuf_cursor += eax
-                edx = edx << 8
-
-                r9 = outbuf_cursor  # ??
-                eax = ecx + edx
-                r9 -= eax
-                ecx = r8 + 2
-                eax = ebx
-                r9 -= 1
-                ebx = ebx * -1
-                r9 += eax
-                edx = ebx
-
-                outbuf_cursor += eax
-                pos += ecx
-                mm.seek(pos)
-                if edx <= -4:
-                    rcx = outbuf_cursor + 1
-                    r8 = r9
-                    rcx += edx
-                    rax = (-4 - edx) >> 2
-                    # r8 -= outbuf_cursor
-                    edx = rax + 1
-                    ebx = ebx + (edx * 4)
-
-                    idx = r8 - eax
-                    do_loop = True
-                    while do_loop:
-                        outbuf[rcx-1] = outbuf[idx]
-                        outbuf[rcx] = outbuf[idx+1]
-                        outbuf[rcx+1] = outbuf[idx+2]
-                        outbuf[rcx+2] = outbuf[idx+3]
-                        rcx += 4
-                        idx += 4
-                        #outbuf_cursor = rcx
-                        edx -= 1
-                        do_loop = edx > 0
-                edx = ebx
-                if edx == 0:
-                    continue
-                r9 -= outbuf_cursor
-                idx = edx + outbuf_cursor * 1
-                edx = edx * -1
-                do_loop = True
-                while do_loop:
-                    eax = outbuf[r9 + idx]
-                    outbuf[idx] = eax
-                    edx -= 1
-                    idx += 1
-                    do_loop = edx > 0
-
-            elif not x20_is_set:
-                r8 = ebx
-                r8 = r8 & 3
-                ecx = read_int8(mm)
-                edx = read_int8(mm)
-                r9 = read_int8(mm)
-                eax = read_int8(mm)
-
-                r9 += 5
-                outbuf[outbuf_cursor] = eax
-                outbuf[outbuf_cursor+1] = read_int8(mm)
-                outbuf[outbuf_cursor+2] = read_int8(mm)
-
-                eax = r8
-                outbuf_cursor += eax
-                eax = ebx
-                eax = eax & 0x10
-                ebx = ebx & 0xC
-                eax = eax << 4
-
-                rdi = outbuf_cursor
-
-                eax += ecx
-                ebx = ebx << 6
-                eax = eax << 8
-
-                ecx = r8 + 3
-
-                eax += edx
-                r9 += ebx
-
-                rdi -= eax
-                pos += ecx
-                mm.seek(pos)
-                eax = r9
-                rdi -= 1
-                r9 = r9 * -1
-                rdi += eax
-                edx = r9
-                outbuf_cursor += eax
-                # ttt = eax
-                if edx <= -4:
-                    rcx = outbuf_cursor + 1
-                    r8 = rdi
-                    rcx += edx
-                    eax = -4
-                    # r8 -= outbuf_cursor
-                    eax = eax >> 2
-                    edx = eax + 1
-                    r9 = r9 + (edx*4)
-
-                    # mm.seek(r8 - ttt)
-                    idx = r8 - eax
-                    do_loop = True
-                    while do_loop:
-                        outbuf[rcx-1] = outbuf[idx]
-                        outbuf[rcx] = outbuf[idx+1]
-                        outbuf[rcx+1] = outbuf[idx+2]
-                        outbuf[rcx+2] = outbuf[idx+3]
-
-                        rcx += 4
-                        idx += 4
-                        #outbuf_cursor = rcx
-                        edx -= 1
-                        do_loop = edx > 0
-                edx = r9
-                if edx == 0:
-                    continue
-
-                rdi -= outbuf_cursor
-                idx = edx + outbuf_cursor * 1
-                edx = edx * -1
-                do_loop = True
-                while do_loop:
-                    eax = outbuf[rdi + idx]
-                    outbuf[idx] = eax
-                    edx -= 1
-                    idx += 1
-                    do_loop = edx > 0
-            else:
-                eax = ebx
-                eax = eax & 0x1F
-                edx = eax * 4 + 4
-
-                if edx > 0x70:
-                    break    # break
-
-                eax = edx
-                edx = edx * -1
-                r8 = edx
-                outbuf_cursor += eax
-                pos += eax
-                cps = outbuf_cursor
-
-                mm.seek(pos)
-                if edx <= -4:
-                    rax = outbuf_cursor + 1
-                    r9 = mm.tell()
-                    rax += r8
-                    rcx = (-4 - r8) >> 2
-                    #r9 -= outbuf_cursor     # ??
-
-                    r8 = rcx + 1
-                    edx = edx + (r8 * 4)
-
-                    mm.seek(r9 - eax)
-                    do_loop = True
-                    while do_loop:
-                        outbuf[rax-1] = read_int8(mm)
-                        outbuf[rax] = read_int8(mm)
-                        outbuf[rax+1] = read_int8(mm)
-                        outbuf[rax+2] = read_int8(mm)
-                        rax += 4
-                        #outbuf_cursor = rax
-                        r8 -= 1
-                        do_loop = r8 > 0
-                if edx == 0:
-                    continue
-                cps -= outbuf_cursor
-                idx = edx + outbuf_cursor * 1
-                edx = edx * -1
-                do_loop = True
-                while do_loop:
-                    eax = outbuf[cps + idx]
-                    outbuf[idx] = eax
-                    edx -= 1
-                    idx += 1
-                    do_loop = edx > 0
-
-    except Exception as e:
-        print(e)
-
-    ebx = ebx & 3
-    if ebx > 0:
-        # Not Tested
-        do_loop = True
-        while do_loop:
-            outbuf[outbuf_cursor] = read_int8(mm)
-            ebx -= 1
-            outbuf_cursor += 1
-            do_loop = ebx > 0
-
-    return outbuf, outsz
+    
+    # Control masks
+    SHORT_COPY = 0x80
+    MEDIUM_COPY = 0x40
+    LONG_COPY = 0x20
+    
+    # Read input file
+    with open(fpath, "rb") as f:
+        data = f.read()
+    
+    # Initialize output buffer
+    size = int.from_bytes(data[2:5], "big")
+    outbuf = bytearray(size)
+    outbuf[:len(T3DB)] = T3DB
+    
+    ipos = 10  # start pos
+    opos = len(T3DB)
+    in_len, out_len = len(data), len(outbuf)
+    last_control = 0
+    
+    while ipos < in_len and opos < out_len:
+        control = data[ipos]
+        last_control = control
+        ipos += 1
+        
+        if not (control & SHORT_COPY):
+            b1 = data[ipos]
+            ipos += 1
+            lit = control & 3
+            if lit:
+                outbuf[opos:opos+lit] = data[ipos:ipos+lit]
+                ipos += lit
+                opos += lit
+            length = ((control >> 2) & 7) + 3
+            offset = b1 + ((control & 0x60) << 3) + 1
+            src = opos - offset
+            for _ in range(length):
+                outbuf[opos] = outbuf[src]
+                opos += 1
+                src += 1
+        
+        elif not (control & MEDIUM_COPY):
+            b2, b3 = data[ipos:ipos+2]
+            ipos += 2
+            lit = b2 >> 6
+            if lit:
+                outbuf[opos:opos+lit] = data[ipos:ipos+lit]
+                ipos += lit
+                opos += lit
+            length = (control & 0x3F) + 4
+            offset = ((b2 & 0x3F) << 8 | b3) + 1
+            src = opos - offset
+            for _ in range(length):
+                outbuf[opos] = outbuf[src]
+                opos += 1
+                src += 1
+        
+        elif not (control & LONG_COPY):
+            b2, b3, b4 = data[ipos:ipos+3]
+            ipos += 3
+            lit = control & 3
+            if lit:
+                outbuf[opos:opos+lit] = data[ipos:ipos+lit]
+                ipos += lit
+                opos += lit
+            length = b4 + ((control & 0x0C) << 6) + 5
+            offset = (((control & 0x10) << 12) | (b2 << 8) | b3) + 1
+            src = opos - offset
+            for _ in range(length):
+                outbuf[opos] = outbuf[src]
+                opos += 1
+                src += 1
+        
+        else:  # literal copy
+            lit = (control & 0x1F) * 4 + 4
+            if lit > 0x70:
+                break
+            outbuf[opos:opos+lit] = data[ipos:ipos+lit]
+            ipos += lit
+            opos += lit
+    
+    # handle trailing bytes
+    trailing = last_control & 3
+    if trailing and opos < out_len:
+        end_pos = min(opos + trailing, out_len)
+        outbuf[opos:end_pos] = data[ipos:ipos + (end_pos - opos)]
+    
+    return bytes(outbuf), size
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if not os.path.isdir(RESULT_DIR):
         os.mkdir(RESULT_DIR)
-
+    
     result = process_rosterupdate()
-
+    
     for platform in result["platforms"]:
         # Ignore Stadia. Stadia was shut down on January 18, 2023.
         if platform["name"] == "sta":
             continue
-
+        
         platform_path = os.path.join(RESULT_DIR, platform["name"])
         if not os.path.isdir(platform_path):
             os.mkdir(platform_path)
-
+        
         tags = platform["tags"]
-
+        
+        # Process Squads
         ver = tags["dbMajor"]
         ver_path = os.path.join(platform_path, "squads", ver)
         if not os.path.isdir(ver_path):
@@ -461,10 +265,11 @@ if __name__ == '__main__':
             bin_path = os.path.join(ver_path, bin_fname)
             download(bin_path, "{}{}".format(CONTENT_URL, loc))
             fdate = bin_fname.split("_")[1]
-
+            
             buf, sz = unpack(bin_path)
-            save_squads(buf, sz, ver_path, "Squads{}000000".format(fdate))
-
+            save_squads(buf, ver_path, "Squads{}000000".format(fdate))
+        
+        # Process FUT
         ver = tags["dbFUTVer"]
         ver_path = os.path.join(platform_path, "FUT", ver)
         if not os.path.isdir(ver_path):
@@ -474,6 +279,6 @@ if __name__ == '__main__':
             bin_path = os.path.join(ver_path, bin_fname)
             download(bin_path, "{}{}".format(CONTENT_URL, loc))
             fdate = bin_fname.split("_")[1]
-
+            
             buf, sz = unpack(bin_path)
-            save_squads(buf, sz, ver_path, "FutSquads{}000000".format(fdate))
+            save_squads(buf, ver_path, "FutSquads{}000000".format(fdate))
