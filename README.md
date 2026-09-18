@@ -1,6 +1,6 @@
 # FIFASquadFileDownloader
 
-Python script which downloads latest EAFC 26 squadfile and futsquadfile from game servers for platforms:
+Python script which downloads latest EAFC 27 squadfile and futsquadfile from game servers for platforms:
 - PC64
 - NX (nintendo switch?)
 - sta (stadia)
