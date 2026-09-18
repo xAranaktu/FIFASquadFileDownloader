@@ -10,7 +10,9 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # CONTENT_URL = "https://fifa23.content.easports.com/fifa/fltOnlineAssets/23DF3AC5-9539-438B-8414-146FAFDE3FF2/2023/"
 # CONTENT_URL = "https://eafc24.content.easports.com/fc/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/"
 # CONTENT_URL = "https://eafc25.content.easports.com/fc/fltOnlineAssets/25E4CDAE-799B-45BE-B257-667FDCDE8044/2025/"
-CONTENT_URL = "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/"
+# CONTENT_URL = "https://eafc26.content.easports.com/fc/fltOnlineAssets/26E4D4D6-8DBB-4A9A-BD99-9C47D3AA341D/2026/"
+CONTENT_URL = "https://eafc27.content.easports.com/fc/fltOnlineAssets/27A3C9F1-6B2E-4D7A-8C1F-2E9B5A4D6C7E/2027/"
+
 ROSTERUPDATE_XML = "rosterupdate.xml"
 
 # signs
@@ -75,7 +77,7 @@ def save_squads(buf, path, filename):
 
     author_sign = b"Aranaktu"
 
-    # FC26 chunk sizes
+    # chunk sizes
     prefix_header_size = 1126
     main_header_size = 48
     bnry_size = 45985
