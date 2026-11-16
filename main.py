@@ -1,9 +1,8 @@
+import argparse
 import os
+import ssl
 import urllib.request
 import xml.etree.ElementTree as ET
-import ssl
-
-ssl._create_default_https_context = ssl._create_unverified_context
 
 # CONTENT_URL = "https://fifa21.content.easports.com/fifa/fltOnlineAssets/21D4F1AC-91A3-458D-A64E-895AA6D871D1/2021/"
 # CONTENT_URL = "https://fifa22.content.easports.com/fifa/fltOnlineAssets/22747632-e3df-4904-b3f6-bb0035736505/2022/"
@@ -241,6 +240,17 @@ def unpack(fpath):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser("FIFA Squad File Downloader")
+    parser.add_argument(
+        "--no-verify-ssl",
+        action="store_true",
+        help="Disable SSL/TLS certificate verification",
+    )
+    args = parser.parse_args()
+
+    if args.no_verify_ssl:
+        ssl._create_default_https_context = ssl._create_unverified_context
+
     if not os.path.isdir(RESULT_DIR):
         os.mkdir(RESULT_DIR)
     
