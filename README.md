@@ -13,3 +13,15 @@ Python script which downloads latest EAFC 27 squadfile and futsquadfile from gam
 You don't need to run the game and it also doesn't require any credentials.
 
 Output is stored in "result" folder in the same directory where you have the script.
+
+## Usage
+
+```
+python main.py
+```
+
+If downloads fail with SSL certificate errors, you can disable certificate verification (insecure):
+
+```
+python main.py --no-verify-ssl
+```
